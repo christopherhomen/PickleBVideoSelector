@@ -41,14 +41,69 @@ function extractViralClipInfo(analysis) {
 }
 
 function parseStartTimeToSeconds(timestampStr) {
-  if (!timestampStr) return 0;
-  const firstPart = timestampStr.split('-')[0].trim();
-  const parts = firstPart.split(':').map(Number);
-  if (parts.length === 2) {
-    return (parts[0] || 0) * 60 + (parts[1] || 0);
+  if (timestampStr === undefined || timestampStr === null) return 0;
+  if (typeof timestampStr === 'number') return timestampStr;
+  const str = String(timestampStr).trim();
+  // Match any hh:mm:ss or mm:ss pattern inside the text
+  const match = str.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (match) {
+    if (match[3] !== undefined) {
+      // hh:mm:ss
+      return parseInt(match[1], 10) * 3600 + parseInt(match[2], 10) * 60 + parseInt(match[3], 10);
+    } else {
+      // mm:ss
+      return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+    }
   }
-  return 0;
+  const parsed = parseInt(str, 10);
+  return isNaN(parsed) ? 0 : parsed;
 }
+
+function renderInteractiveTimestamps(text, onJump) {
+  if (!text) return null;
+  const strText = String(text);
+  const regex = /(\[?\b\d{1,2}:\d{2}(?::\d{2})?\b(?:\s*(?:-|a|hasta)\s*\b\d{1,2}:\d{2}(?::\d{2})?\b)?\]?)/gi;
+
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(strText)) !== null) {
+    const matchStr = match[0];
+    const matchIndex = match.index;
+
+    if (matchIndex > lastIndex) {
+      parts.push(strText.substring(lastIndex, matchIndex));
+    }
+
+    const sec = parseStartTimeToSeconds(matchStr);
+
+    parts.push(
+      <button
+        key={`${matchIndex}-${matchStr}`}
+        type="button"
+        className="timestamp-badge-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          onJump(sec);
+        }}
+        title={`Saltar el video al segundo ${sec} (${matchStr})`}
+      >
+        <Play size={10} fill="currentColor" style={{ marginRight: 3, display: 'inline-block' }} />
+        {matchStr.replace(/^\[|\]$/g, '')}
+      </button>
+    );
+
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < strText.length) {
+    parts.push(strText.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : strText;
+}
+
 
 function formatFullCapCutScript(capcut, title) {
   if (!capcut) return '';
@@ -723,7 +778,7 @@ export default function App() {
                           {/* Point outcome reason */}
                           {a.point_outcome_reason && (
                             <div className="outcome-reason-box">
-                              <strong>🎾 Desenlace Táctico del Punto:</strong> {a.point_outcome_reason}
+                              <strong>🎾 Desenlace Táctico del Punto:</strong> {renderInteractiveTimestamps(a.point_outcome_reason, handleJumpToClip)}
                             </div>
                           )}
 
@@ -754,7 +809,7 @@ export default function App() {
                               {/* Dead time notice */}
                               {clip.dead_time_cut_advice && (
                                 <p className="dead-time-advice">
-                                  ✂️ <em>Consejo de edición:</em> {clip.dead_time_cut_advice}
+                                  ✂️ <em>Consejo de edición:</em> {renderInteractiveTimestamps(clip.dead_time_cut_advice, handleJumpToClip)}
                                 </p>
                               )}
 
@@ -987,7 +1042,7 @@ export default function App() {
                     {/* Action Chronicle */}
                     <div className="report-section">
                       <h4>📋 Crónica y Resumen de la Jugada</h4>
-                      <p className="narrative-text">{selectedVideo.analysis.actions_summary}</p>
+                      <p className="narrative-text">{renderInteractiveTimestamps(selectedVideo.analysis.actions_summary, handleJumpToClip)}</p>
                     </div>
 
                     {/* Techniques Observed */}
@@ -1006,7 +1061,7 @@ export default function App() {
                     {selectedVideo.analysis.highlights && (
                       <div className="report-section">
                         <h4>🌟 Momentos Destacados</h4>
-                        <p className="highlight-text">{selectedVideo.analysis.highlights}</p>
+                        <p className="highlight-text">{renderInteractiveTimestamps(selectedVideo.analysis.highlights, handleJumpToClip)}</p>
                       </div>
                     )}
 
@@ -1014,7 +1069,7 @@ export default function App() {
                     {selectedVideo.analysis.mistakes_or_issues && (
                       <div className="report-section">
                         <h4>⚠️ Errores o Fallos Observados</h4>
-                        <p className="mistake-text">{selectedVideo.analysis.mistakes_or_issues}</p>
+                        <p className="mistake-text">{renderInteractiveTimestamps(selectedVideo.analysis.mistakes_or_issues, handleJumpToClip)}</p>
                       </div>
                     )}
                   </div>

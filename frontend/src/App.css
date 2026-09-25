@@ -1361,3 +1361,35 @@
   border-left: 2px solid #84cc16;
 }
 
+/* Interactive Timestamp Buttons */
+.timestamp-badge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(132, 204, 22, 0.15);
+  color: #bef264;
+  border: 1px solid rgba(132, 204, 22, 0.4);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  margin: 0 3px;
+  vertical-align: baseline;
+  transition: all 0.15s ease-in-out;
+}
+
+.timestamp-badge-btn:hover {
+  background: rgba(132, 204, 22, 0.35);
+  color: #ffffff;
+  border-color: #84cc16;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(132, 204, 22, 0.3);
+}
+
+.timestamp-badge-btn:active {
+  transform: translateY(0);
+}
+
+
