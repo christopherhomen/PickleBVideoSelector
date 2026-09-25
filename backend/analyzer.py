@@ -296,7 +296,7 @@ def analyze_video_file(video_id: str, custom_api_key: Optional[str] = None) -> D
 
         database.update_video_status(video_id, "processing", progress_step="👁️ La IA está examinando el juego y los jugadores...")
 
-        # High-availability model hierarchy with automatic fallback against 503 (demand spike) and 429 (quota)
+        # High-availability model hierarchy with persistent multi-pass fallback against 503 (demand spike) and 429 (quota)
         models_to_try = [
             "gemini-3.6-flash",           # Core next-gen multimodal model
             "gemini-3.5-flash-lite",      # Ultra fast, independent quota tier
@@ -309,76 +309,67 @@ def analyze_video_file(video_id: str, custom_api_key: Optional[str] = None) -> D
         analysis_data = None
         last_error = None
 
-        for model_name in models_to_try:
-            for attempt in range(3):
-                try:
-                    logger.info(f"Consultando modelo {model_name} (intento {attempt+1})...")
-                    database.update_video_status(
-                        video_id,
-                        "processing",
-                        progress_step=f"🧠 Evaluando táctica y viralidad con IA ({model_name})..."
-                    )
-                    res = client.models.generate_content(
-                        model=model_name,
-                        contents=[uploaded_file, prompt_with_rallies],
-                        config=types.GenerateContentConfig(
-                            temperature=0.2,
-                            http_options=types.HttpOptions(timeout=240000)
+        # Persistent multi-pass loop (up to 3 passes over all models to wait out Google's demand spike)
+        for pass_num in range(3):
+            for model_name in models_to_try:
+                for attempt in range(2):
+                    try:
+                        logger.info(f"Consultando modelo {model_name} (Pasada {pass_num+1}, intento {attempt+1})...")
+                        database.update_video_status(
+                            video_id,
+                            "processing",
+                            progress_step=f"🧠 Evaluando táctica y viralidad con IA ({model_name})..."
                         )
-                    )
-                    raw = res.text.strip()
-                    if raw.startswith("```json"): raw = raw[7:]
-                    if raw.startswith("```"): raw = raw[3:]
-                    if raw.endswith("```"): raw = raw[:-3]
-                    analysis_data = json.loads(raw.strip())
-                    analysis_data = anchor_and_refine_analysis(analysis_data, detected_rallies)
-                    logger.info(f"Análisis completado con éxito usando {model_name}")
+                        res = client.models.generate_content(
+                            model=model_name,
+                            contents=[uploaded_file, prompt_with_rallies],
+                            config=types.GenerateContentConfig(
+                                temperature=0.2,
+                                http_options=types.HttpOptions(timeout=240000)
+                            )
+                        )
+                        raw = res.text.strip()
+                        if raw.startswith("```json"): raw = raw[7:]
+                        if raw.startswith("```"): raw = raw[3:]
+                        if raw.endswith("```"): raw = raw[:-3]
+                        analysis_data = json.loads(raw.strip())
+                        analysis_data = anchor_and_refine_analysis(analysis_data, detected_rallies)
+                        logger.info(f"Análisis completado con éxito usando {model_name}")
+                        break
+                    except Exception as e:
+                        last_error = e
+                        err_str = str(e)
+                        logger.warning(f"Aviso con {model_name} intento {attempt+1}: {e}")
+                        if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                            database.update_video_status(
+                                video_id,
+                                "processing",
+                                progress_step="⏳ Cuota ocupada en este nodo, alternando a modelo de alta disponibilidad..."
+                            )
+                            time.sleep(2)
+                            break  # Switch to next model on 429 quota exhaustion
+                        elif "503" in err_str or "UNAVAILABLE" in err_str:
+                            database.update_video_status(
+                                video_id,
+                                "processing",
+                                progress_step=f"⏳ Servidores de Google congestionados (503). Pausa táctica y reintento en {5 * (attempt + 1)}s..."
+                            )
+                            time.sleep(5 * (attempt + 1))
+                        else:
+                            time.sleep(2)
+                if analysis_data:
                     break
-                except Exception as e:
-                    last_error = e
-                    err_str = str(e)
-                    logger.warning(f"Aviso con {model_name} intento {attempt+1}: {e}")
-                    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
-                        database.update_video_status(
-                            video_id,
-                            "processing",
-                            progress_step="⏳ Cuota ocupada en este nodo, alternando a modelo de alta disponibilidad..."
-                        )
-                        time.sleep(3)
-                        break  # Switch to next model on 429 quota exhaustion
-                    elif "503" in err_str or "UNAVAILABLE" in err_str:
-                        database.update_video_status(
-                            video_id,
-                            "processing",
-                            progress_step=f"⏳ Demanda alta en servidores de Google (503). Reintentando en {4 * (attempt + 1)}s..."
-                        )
-                        time.sleep(4 * (attempt + 1))
-                    else:
-                        time.sleep(2)
             if analysis_data:
                 break
-
-        # Emergency retry if all primary attempts failed due to transient 503
-        if not analysis_data:
-            logger.info("Reintento de emergencia final con gemini-3.6-flash tras pico 503...")
-            time.sleep(5)
-            try:
-                res = client.models.generate_content(
-                    model="gemini-3.6-flash",
-                    contents=[uploaded_file, prompt_with_rallies],
-                    config=types.GenerateContentConfig(
-                        temperature=0.2,
-                        http_options=types.HttpOptions(timeout=240000)
-                    )
+            
+            if pass_num < 2:
+                logger.info(f"Pasada {pass_num+1} finalizada sin respuesta de servidor. Esperando 8s antes del siguiente ciclo de disponibilidad...")
+                database.update_video_status(
+                    video_id,
+                    "processing",
+                    progress_step=f"⏳ Esperando liberación de cola de Google Cloud (pasada {pass_num+1}/3)..."
                 )
-                raw = res.text.strip()
-                if raw.startswith("```json"): raw = raw[7:]
-                if raw.startswith("```"): raw = raw[3:]
-                if raw.endswith("```"): raw = raw[:-3]
-                analysis_data = json.loads(raw.strip())
-                analysis_data = anchor_and_refine_analysis(analysis_data, detected_rallies)
-            except Exception as e:
-                last_error = e
+                time.sleep(8)
 
         if not analysis_data:
             raise RuntimeError(f"No se pudo completar el análisis del video tras varios intentos: {last_error}")
