@@ -143,6 +143,7 @@ def optimize_video_for_ai(input_path: Path) -> Path:
     
     cmd = [
         ffmpeg, "-y",
+        "-avoid_negative_ts", "make_zero",
         "-i", str(input_path),
         "-vf", "scale=-2:720,drawtext=text='%{pts\\:hms}':fontsize=36:fontcolor=yellow:box=1:boxcolor=black@0.8:x=20:y=20",
         "-r", "24",
@@ -302,13 +303,13 @@ def analyze_video_file(video_id: str, custom_api_key: Optional[str] = None) -> D
 
         # High-availability model hierarchy with persistent multi-pass fallback against 503 (demand spike) and 429 (quota)
         models_to_try = [
-            "gemini-3.6-flash",           # Core next-gen multimodal model
-            "gemini-3.5-flash-lite",      # Ultra fast, independent quota tier
-            "gemini-flash-lite-latest",   # High-availability production alias
-            "gemini-3.1-flash-lite",      # High-capacity fallback
-            "gemini-3-flash-preview",     # Advanced preview tier
-            "gemini-3.5-flash",           # High capacity tier
-            "gemini-3.8-flash"            # Next-gen reasoning tier
+            "gemini-2.5-flash",           # Extremely fast & high capacity multimodal model
+            "gemini-1.5-flash",           # Battle-tested high availability production model
+            "gemini-2.5-pro",             # High precision reasoning model
+            "gemini-1.5-pro",             # Deep context production fallback
+            "gemini-2.0-flash-exp",       # Next-gen experimental flash model
+            "gemini-3.5-flash-lite",      # Fast lite model
+            "gemini-3.5-flash"            # Standard 3.5 tier
         ]
         analysis_data = None
         last_error = None

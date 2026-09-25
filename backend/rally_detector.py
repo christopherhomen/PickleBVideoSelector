@@ -92,6 +92,23 @@ def detect_active_rallies(video_path: Path) -> List[Dict[str, Any]]:
 
     return merged
 
+def ts_to_seconds(val: Any) -> int:
+    if isinstance(val, (int, float)):
+        return int(val)
+    if isinstance(val, str):
+        val = val.strip()
+        parts = val.split(":")
+        try:
+            if len(parts) == 2:
+                return int(parts[0]) * 60 + int(float(parts[1]))
+            elif len(parts) == 3:
+                return int(parts[0]) * 3600 + int(parts[1]) * 60 + int(float(parts[2]))
+            else:
+                return int(float(val))
+        except (ValueError, TypeError):
+            return 0
+    return 0
+
 def format_ts(sec: int) -> str:
     m = sec // 60
     s = sec % 60
@@ -106,8 +123,20 @@ def anchor_and_refine_analysis(analysis: Dict[str, Any], rallies: List[Dict[str,
         return analysis
 
     clip = analysis.get("viral_clip") or {}
-    ai_start = clip.get("start_seconds", 0)
-    ai_end = clip.get("end_seconds", 15)
+    
+    raw_start = clip.get("start_seconds")
+    if raw_start is None or raw_start == 0:
+        ai_start = ts_to_seconds(clip.get("start_time"))
+    else:
+        ai_start = ts_to_seconds(raw_start)
+
+    raw_end = clip.get("end_seconds")
+    if raw_end is None or raw_end == 0:
+        ai_end = ts_to_seconds(clip.get("end_time"))
+        if ai_end <= ai_start:
+            ai_end = ai_start + 15
+    else:
+        ai_end = ts_to_seconds(raw_end)
 
     # Find the detected rally that overlaps best with Gemini's choice
     best_rally = None
