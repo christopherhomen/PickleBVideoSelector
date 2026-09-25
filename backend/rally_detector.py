@@ -167,14 +167,17 @@ def anchor_and_refine_analysis(analysis: Dict[str, Any], rallies: List[Dict[str,
     existing_steps = capcut.get("timeline_steps") or []
 
     step1_text = existing_steps[0].get("on_screen_text") if len(existing_steps) > 0 else clip.get("hook_caption_es", "¡Mira los reflejos en la red! 👀👇")
+    step1_text_en = existing_steps[0].get("on_screen_text_en") if len(existing_steps) > 0 else clip.get("hook_caption_en", "Look at these lightning reflexes at the kitchen line! 👀👇")
     step1_style = existing_steps[0].get("text_style") if len(existing_steps) > 0 else "Fuente Sans Bold en amarillo neón con borde negro"
     step1_tool = existing_steps[0].get("capcut_tool") if len(existing_steps) > 0 else "Dividir + Plantillas de texto + Zoom de encuadre"
 
     step2_text = existing_steps[1].get("on_screen_text") if len(existing_steps) > 1 else "¡Guerra de manos y dinks en la red! ⚡🔥"
+    step2_text_en = existing_steps[1].get("on_screen_text_en") if len(existing_steps) > 1 else "Lightning fast hands and dink warfare at the kitchen! ⚡🔥"
     step2_style = existing_steps[1].get("text_style") if len(existing_steps) > 1 else "Texto flotante centrado superior"
     step2_tool = existing_steps[1].get("capcut_tool") if len(existing_steps) > 1 else "Velocidad > Curva + Subtítulos automáticos"
 
     step3_text = existing_steps[2].get("on_screen_text") if len(existing_steps) > 2 else "¿Volea limpia o pie en la cocina? Comenta 👇🎾"
+    step3_text_en = existing_steps[2].get("on_screen_text_en") if len(existing_steps) > 2 else "Clean volley or kitchen foot fault? Comment below 👇🎾"
     step3_style = existing_steps[2].get("text_style") if len(existing_steps) > 2 else "Texto CTA grande + Sticker de flecha/fuego"
     step3_tool = existing_steps[2].get("capcut_tool") if len(existing_steps) > 2 else "Congelar + Efecto de audio Whoosh/Impact"
 
@@ -190,6 +193,7 @@ def anchor_and_refine_analysis(analysis: Dict[str, Any], rallies: List[Dict[str,
                 "timestamp": f"{format_ts(s_sec)} - {format_ts(step1_end)}",
                 "duration": f"{step1_end - s_sec}s",
                 "on_screen_text": step1_text,
+                "on_screen_text_en": step1_text_en,
                 "text_style": step1_style,
                 "effect_or_transition": "Corte rápido al saque + Zoom suave (1.1x)",
                 "capcut_tool": step1_tool
@@ -200,6 +204,7 @@ def anchor_and_refine_analysis(analysis: Dict[str, Any], rallies: List[Dict[str,
                 "timestamp": f"{format_ts(step1_end)} - {format_ts(step2_end)}",
                 "duration": f"{step2_end - step1_end}s",
                 "on_screen_text": step2_text,
+                "on_screen_text_en": step2_text_en,
                 "text_style": step2_style,
                 "effect_or_transition": "Efecto de velocidad 'Curva > Montaje' para enfatizar cada volea",
                 "capcut_tool": step2_tool
@@ -210,12 +215,14 @@ def anchor_and_refine_analysis(analysis: Dict[str, Any], rallies: List[Dict[str,
                 "timestamp": f"{format_ts(step2_end)} - {format_ts(e_sec)}",
                 "duration": f"{e_sec - step2_end}s",
                 "on_screen_text": step3_text,
+                "on_screen_text_en": step3_text_en,
                 "text_style": step3_style,
                 "effect_or_transition": "Congelar fotograma (0.5s) en el impacto final + Sonido de impacto",
                 "capcut_tool": step3_tool
             }
         ],
         "call_to_action": capcut.get("call_to_action") or "¿Tú qué hubieras hecho en esta jugada? Comenta abajo 👇",
+        "call_to_action_en": capcut.get("call_to_action_en") or "What would you have done in this play? Comment below 👇",
         "export_settings": "Resolución: 1080p, Cuadros: 60 fps, Tasa de bits: Alta (Recomendada), Códec: H.264"
     }
 

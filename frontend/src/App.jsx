@@ -105,30 +105,57 @@ function renderInteractiveTimestamps(text, onJump) {
 }
 
 
-function formatFullCapCutScript(capcut, title) {
+function getEnglishFallbackText(textEs, stepNum) {
+  if (!textEs) return "Wait for what happens at the kitchen line! ⚡😱";
+  const lower = textEs.toLowerCase();
+  if (lower.includes("mira") || lower.includes("espera") || lower.includes("gancho") || lower.includes("nivel") || stepNum === 1) {
+    return "Wait for what happens at the kitchen line! ⚡😱";
+  }
+  if (lower.includes("manos") || lower.includes("guerra") || lower.includes("duelo") || lower.includes("aceleraci") || stepNum === 2) {
+    return "Lightning fast hands and dink warfare at the kitchen! ⚡🔥";
+  }
+  if (lower.includes("remate") || lower.includes("falta") || lower.includes("punto") || lower.includes("definici") || stepNum === 3) {
+    return "Clean volley or kitchen foot fault? Comment below 👇🎾";
+  }
+  return "Crazy pickleball action at the net! 🎾🔥";
+}
+
+function getEnglishFallbackCta(ctaEs) {
+  if (!ctaEs) return "What would you have done in this play? Comment below 👇";
+  return "Clean point or kitchen foot fault? What would you do? Comment below 👇";
+}
+
+function formatFullCapCutScript(capcut, title, lang = 'es') {
   if (!capcut) return '';
-  let out = `🎬 GUION DE EDICIÓN EN CAPCUT\n`;
-  out += `Video: ${title || 'Pickleball Reel'}\n`;
-  out += `Formato: ${capcut.aspect_ratio || '9:16 (Vertical)'}\n`;
+  const isEn = lang === 'en';
+  let out = isEn ? `🎬 CAPCUT EDITING SCRIPT\n` : `🎬 GUION DE EDICIÓN EN CAPCUT\n`;
+  out += `${isEn ? 'Video' : 'Video'}: ${title || 'Pickleball Reel'}\n`;
+  out += `${isEn ? 'Format' : 'Formato'}: ${capcut.aspect_ratio || '9:16 (Vertical)'}\n`;
   if (capcut.target_platforms) {
-    out += `Plataformas: ${capcut.target_platforms.join(', ')}\n`;
+    out += `${isEn ? 'Target Platforms' : 'Plataformas'}: ${capcut.target_platforms.join(', ')}\n`;
   }
   if (capcut.sound_suggestion) {
-    out += `Audio sugerido: ${capcut.sound_suggestion}\n`;
+    out += `${isEn ? 'Suggested Sound' : 'Audio sugerido'}: ${capcut.sound_suggestion}\n`;
   }
-  out += `\n--- GUION POR TOMAS (TIMELINE) ---\n`;
+  out += `\n--- ${isEn ? 'TIMELINE STEPS' : 'GUION POR TOMAS (TIMELINE)'} ---\n`;
   (capcut.timeline_steps || []).forEach(step => {
+    const textVal = isEn
+      ? (step.on_screen_text_en || getEnglishFallbackText(step.on_screen_text, step.step_number))
+      : step.on_screen_text;
     out += `\n▶️ [${step.timestamp}] (${step.duration || ''}) - ${step.action}\n`;
-    out += `  • Texto en pantalla: "${step.on_screen_text}"\n`;
-    if (step.text_style) out += `  • Estilo de texto: ${step.text_style}\n`;
-    if (step.effect_or_transition) out += `  • Efecto / Transición: ${step.effect_or_transition}\n`;
-    if (step.capcut_tool) out += `  • Herramienta CapCut: ${step.capcut_tool}\n`;
+    out += `  • ${isEn ? 'On-Screen Text' : 'Texto en pantalla'}: "${textVal}"\n`;
+    if (step.text_style) out += `  • ${isEn ? 'Text Style' : 'Estilo de texto'}: ${step.text_style}\n`;
+    if (step.effect_or_transition) out += `  • ${isEn ? 'Effect / Transition' : 'Efecto / Transición'}: ${step.effect_or_transition}\n`;
+    if (step.capcut_tool) out += `  • ${isEn ? 'CapCut Tool' : 'Herramienta CapCut'}: ${step.capcut_tool}\n`;
   });
-  if (capcut.call_to_action) {
-    out += `\n💬 LLAMADO A LA ACCIÓN (CTA):\n"${capcut.call_to_action}"\n`;
+  const ctaVal = isEn
+    ? (capcut.call_to_action_en || getEnglishFallbackCta(capcut.call_to_action))
+    : capcut.call_to_action;
+  if (ctaVal) {
+    out += `\n💬 ${isEn ? 'CALL TO ACTION (CTA)' : 'LLAMADO A LA ACCIÓN (CTA)'}:\n"${ctaVal}"\n`;
   }
   if (capcut.export_settings) {
-    out += `\n⚙️ AJUSTES DE EXPORTACIÓN EN CAPCUT:\n${capcut.export_settings}\n`;
+    out += `\n⚙️ ${isEn ? 'EXPORT SETTINGS' : 'AJUSTES DE EXPORTACIÓN EN CAPCUT'}:\n${capcut.export_settings}\n`;
   }
   return out;
 }
@@ -149,6 +176,7 @@ export default function App() {
   const [uploadFiles, setUploadFiles] = useState([]);
   const [alertMsg, setAlertMsg] = useState(null);
   const [copiedKey, setCopiedKey] = useState(null);
+  const [capcutLang, setCapcutLang] = useState('es'); // 'es' | 'en'
 
   const fileInputRef = useRef(null);
   const modalVideoRef = useRef(null);
@@ -873,6 +901,8 @@ export default function App() {
                       const capcut = a.capcut_recommendation;
                       if (!capcut) return null;
 
+                      const isEn = capcutLang === 'en';
+
                       return (
                         <div className="capcut-guide-box">
                           <div className="capcut-guide-header">
@@ -881,35 +911,62 @@ export default function App() {
                                 <Scissors size={18} />
                               </div>
                               <div>
-                                <h4 className="capcut-title">Recomendación de Edición en CapCut</h4>
+                                <h4 className="capcut-title">
+                                  {isEn ? 'CapCut Video Editing Script' : 'Recomendación de Edición en CapCut'}
+                                </h4>
                                 <span className="capcut-subtitle">
-                                  Guion técnico paso a paso con textos para Instagram Reels, TikTok, Shorts y Facebook
+                                  {isEn 
+                                    ? 'Step-by-step technical script with text overlays for Instagram Reels, TikTok, Shorts & Facebook'
+                                    : 'Guion técnico paso a paso con textos para Instagram Reels, TikTok, Shorts y Facebook'}
                                 </span>
                               </div>
                             </div>
-                            <button
-                              className="btn btn-copy-script"
-                              onClick={() => copyToClipboard(formatFullCapCutScript(capcut, a.title), 'capcut_full')}
-                              title="Copiar guion completo formateado para tu editor"
-                            >
-                              {copiedKey === 'capcut_full' ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
-                              {copiedKey === 'capcut_full' ? '¡Guion Copiado!' : 'Copiar Guion Completo'}
-                            </button>
+
+                            <div className="capcut-header-right">
+                              {/* Language Selector Switcher */}
+                              <div className="lang-switcher-pill">
+                                <button
+                                  type="button"
+                                  className={`lang-opt-btn ${capcutLang === 'es' ? 'active' : ''}`}
+                                  onClick={() => setCapcutLang('es')}
+                                  title="Ver guión en Español"
+                                >
+                                  🇪🇸 Español
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`lang-opt-btn ${capcutLang === 'en' ? 'active' : ''}`}
+                                  onClick={() => setCapcutLang('en')}
+                                  title="View script in English for US/Global Audience"
+                                >
+                                  🇺🇸 English
+                                </button>
+                              </div>
+
+                              <button
+                                className="btn btn-copy-script"
+                                onClick={() => copyToClipboard(formatFullCapCutScript(capcut, a.title, capcutLang), 'capcut_full')}
+                                title="Copiar guion completo formateado para tu editor"
+                              >
+                                {copiedKey === 'capcut_full' ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                                {copiedKey === 'capcut_full' ? '¡Guion Copiado!' : (isEn ? 'Copy Full Script' : 'Copiar Guion Completo')}
+                              </button>
+                            </div>
                           </div>
 
                           {/* Technical Specs Bar */}
                           <div className="capcut-meta-bar">
                             <div className="capcut-meta-item">
-                              <span className="meta-k">📐 Formato:</span>
+                              <span className="meta-k">📐 {isEn ? 'Aspect Ratio:' : 'Formato:'}</span>
                               <span className="meta-v">{capcut.aspect_ratio || '9:16 (Vertical)'}</span>
                             </div>
                             <div className="capcut-meta-item">
-                              <span className="meta-k">🎵 Audio sugerido:</span>
+                              <span className="meta-k">🎵 {isEn ? 'Suggested Sound:' : 'Audio sugerido:'}</span>
                               <span className="meta-v">{capcut.sound_suggestion}</span>
                             </div>
                             {capcut.target_platforms && (
                               <div className="capcut-meta-item">
-                                <span className="meta-k">📱 Plataformas:</span>
+                                <span className="meta-k">📱 {isEn ? 'Platforms:' : 'Plataformas:'}</span>
                                 <span className="meta-v">{capcut.target_platforms.join(' • ')}</span>
                               </div>
                             )}
@@ -918,16 +975,20 @@ export default function App() {
                           {/* Step-by-Step Storyboard */}
                           <div className="capcut-timeline-list">
                             <div className="timeline-title-row">
-                              <span>🎬 Guion Cronológico por Tomas (Segundo a Segundo):</span>
+                              <span>🎬 {isEn ? 'Timeline Storyboard Steps (Second by Second):' : 'Guion Cronológico por Tomas (Segundo a Segundo):'}</span>
                             </div>
                             {(capcut.timeline_steps || []).map((step, idx) => {
                               const stepSec = parseStartTimeToSeconds(step.timestamp);
                               const copyKey = `step_${idx}`;
+                              const screenText = isEn 
+                                ? (step.on_screen_text_en || getEnglishFallbackText(step.on_screen_text, step.step_number || idx + 1))
+                                : step.on_screen_text;
+
                               return (
                                 <div key={idx} className="capcut-step-card">
                                   <div className="step-card-top">
                                     <div className="step-badge-group">
-                                      <span className="step-index-badge">Paso {step.step_number || idx + 1}</span>
+                                      <span className="step-index-badge">{isEn ? `Step ${step.step_number || idx + 1}` : `Paso ${step.step_number || idx + 1}`}</span>
                                       <span className="step-action-name">{step.action}</span>
                                       <span className="step-time-pill">⏱️ {step.timestamp} ({step.duration})</span>
                                     </div>
@@ -940,29 +1001,29 @@ export default function App() {
                                       }}
                                       title={`Saltar el video al segundo de inicio (${step.timestamp})`}
                                     >
-                                      <Play size={12} fill="#fff" /> Ir al segundo
+                                      <Play size={12} fill="#fff" /> {isEn ? 'Jump to second' : 'Ir al segundo'}
                                     </button>
                                   </div>
 
                                   {/* Text on Screen */}
                                   <div className="step-text-row">
                                     <div className="step-text-label">
-                                      <span>💬 Texto en Pantalla (Overlay en CapCut):</span>
+                                      <span>💬 {isEn ? 'On-Screen Text (Overlay in CapCut):' : 'Texto en Pantalla (Overlay en CapCut):'}</span>
                                       <button
                                         className="copy-mini-btn"
-                                        onClick={() => copyToClipboard(step.on_screen_text, copyKey)}
+                                        onClick={() => copyToClipboard(screenText, copyKey)}
                                         title="Copiar solo este texto"
                                       >
                                         {copiedKey === copyKey ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
-                                        {copiedKey === copyKey ? 'Copiado!' : 'Copiar Texto'}
+                                        {copiedKey === copyKey ? 'Copiado!' : (isEn ? 'Copy Text' : 'Copiar Texto')}
                                       </button>
                                     </div>
                                     <div className="step-screen-preview">
-                                      "{step.on_screen_text}"
+                                      "{screenText}"
                                     </div>
                                     {step.text_style && (
                                       <div className="step-style-hint">
-                                        🎨 <em>Estilo recomendado:</em> {step.text_style}
+                                        🎨 <em>{isEn ? 'Recommended style:' : 'Estilo recomendado:'}</em> {step.text_style}
                                       </div>
                                     )}
                                   </div>
@@ -970,11 +1031,11 @@ export default function App() {
                                   {/* Transitions and tools */}
                                   <div className="step-tools-row">
                                     <div className="step-tool-col">
-                                      <span className="tool-lbl">✨ Efecto o Transición:</span>
+                                      <span className="tool-lbl">✨ {isEn ? 'Effect / Transition:' : 'Efecto o Transición:'}</span>
                                       <span className="tool-val">{step.effect_or_transition}</span>
                                     </div>
                                     <div className="step-tool-col">
-                                      <span className="tool-lbl">🛠️ Herramienta en CapCut:</span>
+                                      <span className="tool-lbl">🛠️ {isEn ? 'CapCut Tool:' : 'Herramienta en CapCut:'}</span>
                                       <span className="tool-val code-val">{step.capcut_tool}</span>
                                     </div>
                                   </div>
@@ -986,24 +1047,34 @@ export default function App() {
                           {/* CTA Call to Action Box */}
                           {capcut.call_to_action && (
                             <div className="capcut-cta-box">
-                              <div className="cta-header">
-                                <span>📢 Llamado a la Acción (CTA para Comentarios & Algoritmo):</span>
-                                <button
-                                  className="copy-mini-btn"
-                                  onClick={() => copyToClipboard(capcut.call_to_action, 'cta_capcut')}
-                                >
-                                  {copiedKey === 'cta_capcut' ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
-                                  {copiedKey === 'cta_capcut' ? 'Copiado!' : 'Copiar CTA'}
-                                </button>
-                              </div>
-                              <p className="cta-content">"{capcut.call_to_action}"</p>
+                              {(() => {
+                                const ctaText = isEn
+                                  ? (capcut.call_to_action_en || getEnglishFallbackCta(capcut.call_to_action))
+                                  : capcut.call_to_action;
+
+                                return (
+                                  <>
+                                    <div className="cta-header">
+                                      <span>📢 {isEn ? 'Call to Action (CTA for Comments & Algorithm):' : 'Llamado a la Acción (CTA para Comentarios & Algoritmo):'}</span>
+                                      <button
+                                        className="copy-mini-btn"
+                                        onClick={() => copyToClipboard(ctaText, 'cta_capcut')}
+                                      >
+                                        {copiedKey === 'cta_capcut' ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
+                                        {copiedKey === 'cta_capcut' ? 'Copiado!' : (isEn ? 'Copy CTA' : 'Copiar CTA')}
+                                      </button>
+                                    </div>
+                                    <p className="cta-content">"{ctaText}"</p>
+                                  </>
+                                );
+                              })()}
                             </div>
                           )}
 
                           {/* Export Settings Note */}
                           {capcut.export_settings && (
                             <div className="capcut-export-note">
-                              ⚙️ <strong>Exportación en CapCut:</strong> {capcut.export_settings}
+                              ⚙️ <strong>{isEn ? 'CapCut Export Settings:' : 'Exportación en CapCut:'}</strong> {capcut.export_settings}
                             </div>
                           )}
                         </div>

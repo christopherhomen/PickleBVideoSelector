@@ -88,6 +88,7 @@ Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura exac
         "timestamp": "01:48 - 01:51",
         "duration": "3s",
         "on_screen_text": "¡Espera lo que pasa en la red! 😱👇",
+        "on_screen_text_en": "Wait for what happens at the kitchen line! 😱👇",
         "text_style": "Fuente Sans Bold en amarillo/blanco con borde negro",
         "effect_or_transition": "Corte rápido al saque + Zoom suave hacia la bola",
         "capcut_tool": "Dividir + Texto > Plantillas + Zoom"
@@ -98,6 +99,7 @@ Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura exac
         "timestamp": "01:51 - 01:59",
         "duration": "8s",
         "on_screen_text": "¡Manos rápidas en la cocina! ⚡🔥",
+        "on_screen_text_en": "Lightning fast hands at the kitchen line! ⚡🔥",
         "text_style": "Texto flotante superior sin tapar a los jugadores",
         "effect_or_transition": "Velocidad Curva (Curva > Montaje) para enfatizar cada volea",
         "capcut_tool": "Velocidad > Curva + Subtítulos automáticos"
@@ -108,12 +110,14 @@ Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura exac
         "timestamp": "01:59 - 02:04",
         "duration": "5s",
         "on_screen_text": "¿Fue falta en la cocina? Comenta abajo 👇🎾",
+        "on_screen_text_en": "Clean volley or kitchen foot fault? Comment below 👇🎾",
         "text_style": "Sticker de flecha señalando + Texto CTA grande",
         "effect_or_transition": "Congelar fotograma (0.5s) al rematar + Efecto de sonido Whoosh",
         "capcut_tool": "Efectos de audio > Whoosh + Congelar"
       }
     ],
     "call_to_action": "¿Punto limpio o invasión de cocina? ¿Tú qué hubieras hecho? Comenta abajo 👇",
+    "call_to_action_en": "Clean point or foot fault at the kitchen line? What would you do? Comment below 👇",
     "export_settings": "1080p, 60fps / 30fps, Tasa de bits recomendada, Relación 9:16"
   }
 }
@@ -140,10 +144,10 @@ def optimize_video_for_ai(input_path: Path) -> Path:
     cmd = [
         ffmpeg, "-y",
         "-i", str(input_path),
-        "-vf", "scale=-2:720,drawtext=timecode='00\\:00\\:00\\:00':rate=24:fontsize=32:fontcolor=white:box=1:boxcolor=black@0.7:x=20:y=20",
+        "-vf", "scale=-2:720,drawtext=text='%{pts\\:hms}':fontsize=36:fontcolor=yellow:box=1:boxcolor=black@0.8:x=20:y=20",
         "-r", "24",
         "-c:v", "libx264",
-        "-crf", "28",
+        "-crf", "26",
         "-preset", "ultrafast",
         "-c:a", "aac",
         "-b:a", "96k",
