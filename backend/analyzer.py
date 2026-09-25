@@ -298,18 +298,19 @@ def analyze_video_file(video_id: str, custom_api_key: Optional[str] = None) -> D
 
         # High-availability model hierarchy with automatic fallback against 503 (demand spike) and 429 (quota)
         models_to_try = [
-            "gemini-3.5-flash-lite",      # Ultra fast, zero 503, independent quota
-            "gemini-flash-lite-latest",   # High-availability production tier
+            "gemini-3.6-flash",           # Core next-gen multimodal model
+            "gemini-3.5-flash-lite",      # Ultra fast, independent quota tier
+            "gemini-flash-lite-latest",   # High-availability production alias
             "gemini-3.1-flash-lite",      # High-capacity fallback
             "gemini-3-flash-preview",     # Advanced preview tier
-            "gemini-3.5-flash",           # Deep reasoning tier
-            "gemini-3.8-flash"            # Next-gen tier
+            "gemini-3.5-flash",           # High capacity tier
+            "gemini-3.8-flash"            # Next-gen reasoning tier
         ]
         analysis_data = None
         last_error = None
 
         for model_name in models_to_try:
-            for attempt in range(2):
+            for attempt in range(3):
                 try:
                     logger.info(f"Consultando modelo {model_name} (intento {attempt+1})...")
                     database.update_video_status(
@@ -343,20 +344,41 @@ def analyze_video_file(video_id: str, custom_api_key: Optional[str] = None) -> D
                             "processing",
                             progress_step="⏳ Cuota ocupada en este nodo, alternando a modelo de alta disponibilidad..."
                         )
-                        time.sleep(2)
-                        break  # Immediately switch model on 429 since quota is per-model
+                        time.sleep(3)
+                        break  # Switch to next model on 429 quota exhaustion
                     elif "503" in err_str or "UNAVAILABLE" in err_str:
                         database.update_video_status(
                             video_id,
                             "processing",
-                            progress_step="⏳ Servidores de Google con alta demanda temporal, alternando a réplica secundaria..."
+                            progress_step=f"⏳ Demanda alta en servidores de Google (503). Reintentando en {4 * (attempt + 1)}s..."
                         )
-                        time.sleep(2)
-                        break  # Switch to next replica
+                        time.sleep(4 * (attempt + 1))
                     else:
                         time.sleep(2)
             if analysis_data:
                 break
+
+        # Emergency retry if all primary attempts failed due to transient 503
+        if not analysis_data:
+            logger.info("Reintento de emergencia final con gemini-3.6-flash tras pico 503...")
+            time.sleep(5)
+            try:
+                res = client.models.generate_content(
+                    model="gemini-3.6-flash",
+                    contents=[uploaded_file, prompt_with_rallies],
+                    config=types.GenerateContentConfig(
+                        temperature=0.2,
+                        http_options=types.HttpOptions(timeout=240000)
+                    )
+                )
+                raw = res.text.strip()
+                if raw.startswith("```json"): raw = raw[7:]
+                if raw.startswith("```"): raw = raw[3:]
+                if raw.endswith("```"): raw = raw[:-3]
+                analysis_data = json.loads(raw.strip())
+                analysis_data = anchor_and_refine_analysis(analysis_data, detected_rallies)
+            except Exception as e:
+                last_error = e
 
         if not analysis_data:
             raise RuntimeError(f"No se pudo completar el análisis del video tras varios intentos: {last_error}")
