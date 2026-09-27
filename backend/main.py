@@ -281,6 +281,55 @@ def stream_video(video_id: str):
     content_type = "video/mp4" if file_path.suffix.lower() == ".mp4" else "video/quicktime"
     return FileResponse(file_path, media_type=content_type)
 
+@app.get("/api/videos/{video_id}/cut")
+def download_cut_clip(video_id: str, start_seconds: int = 0, end_seconds: int = 15):
+    """
+    Cuts the video between start_seconds and end_seconds using FFmpeg
+    and returns a downloadable high-quality .mp4 clip ready for CapCut.
+    """
+    video = database.get_video_by_id(video_id)
+    if not video or not Path(video["path"]).exists():
+        raise HTTPException(status_code=404, detail="Archivo de video no encontrado.")
+
+    original_path = Path(video["path"])
+    start_sec = max(0, start_seconds)
+    end_sec = max(start_sec + 3, end_seconds)
+    duration = end_sec - start_sec
+
+    temp_dir = DATA_DIR / "cuts"
+    temp_dir.mkdir(parents=True, exist_ok=True)
+
+    cut_filename = f"cut_{original_path.stem}_{start_sec}s_{end_sec}s.mp4"
+    cut_file_path = temp_dir / cut_filename
+
+    if not cut_file_path.exists() or cut_file_path.stat().st_size < 1000:
+        import imageio_ffmpeg
+        ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+        cmd = [
+            ffmpeg, "-y",
+            "-ss", str(start_sec),
+            "-i", str(original_path),
+            "-t", str(duration),
+            "-c:v", "libx264",
+            "-crf", "20",
+            "-preset", "ultrafast",
+            "-c:a", "aac",
+            "-b:a", "128k",
+            "-movflags", "+faststart",
+            str(cut_file_path)
+        ]
+        try:
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error recortando el video con FFmpeg: {e}")
+
+    download_name = f"PickleScout_{original_path.stem}_{start_sec}s_{end_sec}s.mp4"
+    return FileResponse(
+        cut_file_path,
+        media_type="video/mp4",
+        headers={"Content-Disposition": f"attachment; filename={download_name}"}
+    )
+
 @app.get("/api/export")
 def export_results(export_format: str = "json"):
     videos = database.get_all_videos()

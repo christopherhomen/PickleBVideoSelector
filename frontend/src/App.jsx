@@ -823,17 +823,29 @@ export default function App() {
                                     <span className="duration-pill">({clip.duration_seconds} segs)</span>
                                   </span>
                                 </div>
-                                <button
-                                  type="button"
-                                  className="btn btn-jump-clip"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleJumpToClip(clip.start_seconds);
-                                  }}
-                                  title="Ir al inicio de la jugada viral en el reproductor"
-                                >
-                                  <Play size={14} fill="#fff" /> Reproducir Clip
-                                </button>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                  <button
+                                    type="button"
+                                    className="btn btn-jump-clip"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleJumpToClip(clip.start_seconds);
+                                    }}
+                                    title="Ir al inicio de la jugada viral en el reproductor"
+                                  >
+                                    <Play size={14} fill="#fff" /> Reproducir Clip
+                                  </button>
+                                  <a
+                                    href={`/api/videos/${selectedVideo.id}/cut?start_seconds=${clip.start_seconds}&end_seconds=${clip.end_seconds}`}
+                                    download
+                                    className="btn btn-download-clip"
+                                    style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600 }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    title="Descargar este segmento de video recortado en .MP4 listo para CapCut"
+                                  >
+                                    <Download size={14} /> Descargar Clip .MP4
+                                  </a>
+                                </div>
                               </div>
 
                               {/* Dead time notice */}
@@ -930,18 +942,30 @@ export default function App() {
                                         </span>
                                       )}
                                     </div>
-                                    <button
-                                      type="button"
-                                      className="btn btn-jump-clip"
-                                      style={{ background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)' }}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleJumpToClip(sec.start_seconds);
-                                      }}
-                                      title={`Ir al inicio del Clip #${sec.clip_id} (${sec.start_time}) en el reproductor`}
-                                    >
-                                      <Play size={14} fill="#fff" /> Ir al segundo {sec.start_time}
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                      <button
+                                        type="button"
+                                        className="btn btn-jump-clip"
+                                        style={{ background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)' }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleJumpToClip(sec.start_seconds);
+                                        }}
+                                        title={`Ir al inicio del Clip #${sec.clip_id} (${sec.start_time}) en el reproductor`}
+                                      >
+                                        <Play size={14} fill="#fff" /> Ir al segundo {sec.start_time}
+                                      </button>
+                                      <a
+                                        href={`/api/videos/${selectedVideo.id}/cut?start_seconds=${sec.start_seconds}&end_seconds=${sec.end_seconds}`}
+                                        download
+                                        className="btn btn-download-clip"
+                                        style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600 }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        title={`Descargar Clip #${sec.clip_id} (${sec.start_time} - ${sec.end_time}) en .MP4`}
+                                      >
+                                        <Download size={14} /> Descargar Clip .MP4
+                                      </a>
+                                    </div>
                                   </div>
                                   {sec.dead_time_cut_advice && (
                                     <p className="dead-time-advice">
