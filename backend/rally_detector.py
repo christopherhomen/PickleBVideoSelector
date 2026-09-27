@@ -255,4 +255,81 @@ def anchor_and_refine_analysis(analysis: Dict[str, Any], rallies: List[Dict[str,
         "export_settings": "Resolución: 1080p, Cuadros: 60 fps, Tasa de bits: Alta (Recomendada), Códec: H.264"
     }
 
+    # Generate secondary viral clips for all other active rallies detected in this video
+    secondary_clips = []
+    clip_counter = 2
+    for r in rallies:
+        r_start = r["start_seconds"]
+        r_end = r["end_seconds"]
+        # Skip if this rally is already the primary hero clip
+        if best_rally and abs(r_start - best_rally["start_seconds"]) <= 3:
+            continue
+        
+        r_dur = max(6, r_end - r_start)
+        r_step1_dur = max(2, min(4, r_dur // 3))
+        r_step3_dur = max(2, min(5, r_dur // 4))
+        r_step1_end = r_start + r_step1_dur
+        r_step2_end = max(r_step1_end + 2, r_end - r_step3_dur)
+
+        sec_clip = {
+            "clip_id": clip_counter,
+            "title": f"Clip Viral Secundario #{clip_counter} ({format_ts(r_start)} - {format_ts(r_end)})",
+            "start_time": format_ts(r_start),
+            "end_time": format_ts(r_end),
+            "start_seconds": r_start,
+            "end_seconds": r_end,
+            "duration_seconds": r_dur,
+            "hook_caption_es": f"¡Mira la jugada en la red en el minuto {format_ts(r_start)}! ⚡🔥",
+            "hook_caption_en": f"Look at this lightning fast rally at {format_ts(r_start)}! ⚡🔥",
+            "suggested_hashtags": ["#pickleball", "#dinking", "#kitchenbattle", "#reels", "#pickleballhighlights"],
+            "dead_time_cut_advice": f"Recortar tiempo muerto previo e iniciar el clip #{clip_counter} directamente en {format_ts(r_start)}.",
+            "capcut_recommendation": {
+                "title": f"Guion CapCut - Clip #{clip_counter}",
+                "target_platforms": ["Instagram Reels", "TikTok", "YouTube Shorts"],
+                "aspect_ratio": "9:16 (Vertical)",
+                "sound_suggestion": "Audio en tendencia rítmico + Amplificar el impacto de la paleta",
+                "timeline_steps": [
+                    {
+                        "step_number": 1,
+                        "action": "Toma 1: Gancho Inicial (Hook de retención)",
+                        "timestamp": f"{format_ts(r_start)} - {format_ts(r_step1_end)}",
+                        "duration": f"{r_step1_end - r_start}s",
+                        "on_screen_text": f"¡Mira la reacción en el minuto {format_ts(r_start)}! 👀⚡",
+                        "on_screen_text_en": f"Watch the fast reaction at {format_ts(r_start)}! 👀⚡",
+                        "text_style": "Fuente Sans Bold en amarillo neón con borde negro",
+                        "effect_or_transition": "Corte rápido al saque + Zoom suave (1.1x)",
+                        "capcut_tool": "Dividir + Plantillas de texto + Zoom"
+                    },
+                    {
+                        "step_number": 2,
+                        "action": "Toma 2: Clímax (Intercambio en la cocina)",
+                        "timestamp": f"{format_ts(r_step1_end)} - {format_ts(r_step2_end)}",
+                        "duration": f"{r_step2_end - r_step1_end}s",
+                        "on_screen_text": "¡Manos de fuego y dinks en la red! ⚡🔥",
+                        "on_screen_text_en": "Fast hands and dink warfare at the kitchen! ⚡🔥",
+                        "text_style": "Texto flotante centrado superior",
+                        "effect_or_transition": "Velocidad Curva para enfatizar voleas",
+                        "capcut_tool": "Velocidad > Curva + Subtítulos automáticos"
+                    },
+                    {
+                        "step_number": 3,
+                        "action": "Toma 3: Desenlace y CTA",
+                        "timestamp": f"{format_ts(r_step2_end)} - {format_ts(r_end)}",
+                        "duration": f"{r_end - r_step2_end}s",
+                        "on_screen_text": "¿Fue punto limpio o error? Comenta abajo 👇🎾",
+                        "on_screen_text_en": "Clean play or unforced error? Comment below 👇🎾",
+                        "text_style": "Texto CTA grande + Sticker de flecha",
+                        "effect_or_transition": "Congelar fotograma 0.5s + Sonido de impacto",
+                        "capcut_tool": "Efectos de audio > Whoosh + Congelar"
+                    }
+                ],
+                "call_to_action": "¿Tú qué hubieras hecho en esta jugada? Comenta abajo 👇",
+                "call_to_action_en": "What would you have done in this play? Comment below 👇",
+                "export_settings": "1080p, 60fps, Relación 9:16"
+            }
+        }
+        secondary_clips.append(sec_clip)
+        clip_counter += 1
+
+    analysis["secondary_clips"] = secondary_clips
     return analysis

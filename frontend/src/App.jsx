@@ -891,6 +891,74 @@ export default function App() {
                               )}
                             </div>
                           )}
+
+                          {/* Secondary Viral Clips List if video contains multiple key rallies */}
+                          {a.secondary_clips && a.secondary_clips.length > 0 && (
+                            <div className="secondary-clips-container" style={{ marginTop: '24px' }}>
+                              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '1rem', marginBottom: '14px', fontWeight: 600 }}>
+                                <Sparkles size={18} />
+                                Clips Secundarios Destacados ({a.secondary_clips.length} jugadas adicionales en este video)
+                              </h4>
+                              {a.secondary_clips.map((sec, idx) => (
+                                <div key={idx} className="clip-recommendation-card" style={{ borderColor: 'rgba(245, 158, 11, 0.4)', marginBottom: '16px', background: 'rgba(245, 158, 11, 0.03)' }}>
+                                  <div className="clip-time-bar">
+                                    <div className="clip-time-info">
+                                      <Scissors size={16} className="scissors-icon" style={{ color: '#f59e0b' }} />
+                                      <span>
+                                        {sec.title || `Clip #${sec.clip_id}`}: <strong>{sec.start_time} ➔ {sec.end_time}</strong>
+                                        <span className="duration-pill">({sec.duration_seconds} segs)</span>
+                                      </span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      className="btn btn-jump-clip"
+                                      style={{ background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)' }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleJumpToClip(sec.start_seconds);
+                                      }}
+                                      title={`Ir al inicio del Clip #${sec.clip_id} en el reproductor`}
+                                    >
+                                      <Play size={14} fill="#fff" /> Reproducir Clip #{sec.clip_id}
+                                    </button>
+                                  </div>
+                                  {sec.dead_time_cut_advice && (
+                                    <p className="dead-time-advice">
+                                      ✂️ <em>Consejo de edición:</em> {renderInteractiveTimestamps(sec.dead_time_cut_advice, handleJumpToClip)}
+                                    </p>
+                                  )}
+                                  <div className="hook-captions-grid">
+                                    <div className="hook-box">
+                                      <div className="hook-box-header">
+                                        <span>Gancho para Redes (Español):</span>
+                                        <button
+                                          className="copy-mini-btn"
+                                          onClick={() => copyToClipboard(sec.hook_caption_es, `sec_hook_es_${idx}`)}
+                                        >
+                                          {copiedKey === `sec_hook_es_${idx}` ? <Check size={13} className="text-green-400" /> : <Copy size={13} />}
+                                          {copiedKey === `sec_hook_es_${idx}` ? 'Copiado!' : 'Copiar'}
+                                        </button>
+                                      </div>
+                                      <div className="hook-text">"{sec.hook_caption_es}"</div>
+                                    </div>
+                                    <div className="hook-box">
+                                      <div className="hook-box-header">
+                                        <span>Viral Hook (English / US Audience):</span>
+                                        <button
+                                          className="copy-mini-btn"
+                                          onClick={() => copyToClipboard(sec.hook_caption_en, `sec_hook_en_${idx}`)}
+                                        >
+                                          {copiedKey === `sec_hook_en_${idx}` ? <Check size={13} className="text-green-400" /> : <Copy size={13} />}
+                                          {copiedKey === `sec_hook_en_${idx}` ? 'Copiado!' : 'Copiar'}
+                                        </button>
+                                      </div>
+                                      <div className="hook-text">"{sec.hook_caption_en}"</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })()}
