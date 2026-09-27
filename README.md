@@ -1,6 +1,8 @@
 # 🎾 PickleScout AI | Analizador y Clasificador de Videos de Pickleball
 
-Aplicación Web Fullstack impulsada por Inteligencia Artificial Multimodal (**Google Gemini**) para analizar, auditar y clasificar videos de Pickleball cuadro por cuadro como un analista profesional.
+> 🛡️ **PUNTO DE RESTAURACIÓN / BACKUP SEGURO ESTABLE**: `v1.0.0-stable-backup`
+> *(Versión 100% verificada con precisión milimétrica de tiempos, guiones bilingües CapCut, soporte multi-clip cronológico y resiliencia Gemini 503).*
+> Para regresar a esta versión en cualquier momento: `git checkout v1.0.0-stable-backup`
 
 ---
 
