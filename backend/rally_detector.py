@@ -255,10 +255,22 @@ def anchor_and_refine_analysis(analysis: Dict[str, Any], rallies: List[Dict[str,
         "export_settings": "Resolución: 1080p, Cuadros: 60 fps, Tasa de bits: Alta (Recomendada), Códec: H.264"
     }
 
-    # Generate secondary viral clips for all other active rallies detected in this video
+    # Sort all rallies chronologically to maintain exact match timeline coherence
+    sorted_rallies = sorted(rallies, key=lambda x: x["start_seconds"])
+
+    # Generate scored secondary viral clips for all other active rallies in chronological match order
     secondary_clips = []
     clip_counter = 2
-    for r in rallies:
+    top_clips_chronological = []
+
+    if best_rally:
+        top_clips_chronological.append({
+            "label": "Clip Héroe #1",
+            "time": f"{format_ts(s_sec)} - {format_ts(e_sec)}",
+            "start_seconds": s_sec
+        })
+
+    for r in sorted_rallies:
         r_start = r["start_seconds"]
         r_end = r["end_seconds"]
         # Skip if this rally is already the primary hero clip
@@ -266,6 +278,9 @@ def anchor_and_refine_analysis(analysis: Dict[str, Any], rallies: List[Dict[str,
             continue
         
         r_dur = max(6, r_end - r_start)
+        # Score calculation based on rally length & engagement potential
+        r_score = min(94, 82 + min(12, r_dur // 2))
+
         r_step1_dur = max(2, min(4, r_dur // 3))
         r_step3_dur = max(2, min(5, r_dur // 4))
         r_step1_end = r_start + r_step1_dur
@@ -273,14 +288,16 @@ def anchor_and_refine_analysis(analysis: Dict[str, Any], rallies: List[Dict[str,
 
         sec_clip = {
             "clip_id": clip_counter,
-            "title": f"Clip Viral Secundario #{clip_counter} ({format_ts(r_start)} - {format_ts(r_end)})",
+            "viral_rank": f"Clip Secundario #{clip_counter}",
+            "viral_score": r_score,
+            "title": f"Clip #{clip_counter} ({format_ts(r_start)} - {format_ts(r_end)})",
             "start_time": format_ts(r_start),
             "end_time": format_ts(r_end),
             "start_seconds": r_start,
             "end_seconds": r_end,
             "duration_seconds": r_dur,
-            "hook_caption_es": f"¡Mira la jugada en la red en el minuto {format_ts(r_start)}! ⚡🔥",
-            "hook_caption_en": f"Look at this lightning fast rally at {format_ts(r_start)}! ⚡🔥",
+            "hook_caption_es": f"¡Atento al intercambio en el minuto {format_ts(r_start)}! ⚡🔥",
+            "hook_caption_en": f"Look at this fast rally at {format_ts(r_start)}! ⚡🔥",
             "suggested_hashtags": ["#pickleball", "#dinking", "#kitchenbattle", "#reels", "#pickleballhighlights"],
             "dead_time_cut_advice": f"Recortar tiempo muerto previo e iniciar el clip #{clip_counter} directamente en {format_ts(r_start)}.",
             "capcut_recommendation": {
@@ -329,7 +346,24 @@ def anchor_and_refine_analysis(analysis: Dict[str, Any], rallies: List[Dict[str,
             }
         }
         secondary_clips.append(sec_clip)
+        top_clips_chronological.append({
+            "label": f"Clip #{clip_counter}",
+            "time": f"{format_ts(r_start)} - {format_ts(r_end)}",
+            "start_seconds": r_start
+        })
         clip_counter += 1
 
     analysis["secondary_clips"] = secondary_clips
+
+    # Build Editor Curation Pack Advice (Estrategia de Selección)
+    top_clips_chronological = sorted(top_clips_chronological, key=lambda x: x["start_seconds"])
+    chrono_list_str = " ➔ ".join([f"{c['label']} ({c['time']})" for c in top_clips_chronological[:4]])
+
+    analysis["clip_pack_recommendation"] = {
+        "title": "🎯 Estrategia Sugerida de Selección para el Editor",
+        "option_single_hero": f"Opción A (Mejor Reel Individual): Usa únicamente el Clip Héroe #1 ({format_ts(s_sec)} - {format_ts(e_sec)}) para máxima retención de 15 a 20 segundos.",
+        "option_composite_match": f"Opción B (Reel Compilatorio 'Top Jugadas del Partido'): Para un video de 45s con coherencia cronológica del juego, une en este orden exacto: {chrono_list_str}.",
+        "option_content_calendar": f"Opción C (Estrategia Multidía): Tienes {1 + len(secondary_clips)} clips independientes listos para publicar como un Reel diario durante {min(4, 1 + len(secondary_clips))} días."
+    }
+
     return analysis

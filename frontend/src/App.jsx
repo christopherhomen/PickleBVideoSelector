@@ -184,14 +184,16 @@ export default function App() {
   const handleJumpToClip = (seconds) => {
     if (modalVideoRef.current) {
       const vid = modalVideoRef.current;
-      const targetSec = Math.max(0, Number(seconds) || 0);
+      const targetSec = parseStartTimeToSeconds(seconds);
       try {
-        vid.currentTime = targetSec;
-        const playPromise = vid.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((e) => {
-            console.log("Play handled:", e);
-          });
+        if (isFinite(targetSec) && targetSec >= 0) {
+          vid.currentTime = targetSec;
+          const playPromise = vid.play();
+          if (playPromise !== undefined) {
+            playPromise.catch((e) => {
+              console.log("Play handled:", e);
+            });
+          }
         }
       } catch (err) {
         console.warn("Error seeking video:", err);
@@ -892,22 +894,41 @@ export default function App() {
                             </div>
                           )}
 
+                          {/* Editor Pack Curation Recommendation */}
+                          {a.clip_pack_recommendation && (
+                            <div className="pack-recommendation-box" style={{ marginTop: '20px', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.04) 100%)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '16px 20px' }}>
+                              <h5 style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 10px 0', fontSize: '0.98rem' }}>
+                                <Sparkles size={16} /> {a.clip_pack_recommendation.title}
+                              </h5>
+                              <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '0.88rem', color: '#d1d5db', lineHeight: '1.6' }}>
+                                <li style={{ marginBottom: '6px' }}><strong>🔥 {a.clip_pack_recommendation.option_single_hero.split(':')[0]}:</strong> {renderInteractiveTimestamps(a.clip_pack_recommendation.option_single_hero.split(':')[1] || a.clip_pack_recommendation.option_single_hero, handleJumpToClip)}</li>
+                                <li style={{ marginBottom: '6px' }}><strong>🎬 {a.clip_pack_recommendation.option_composite_match.split(':')[0]}:</strong> {renderInteractiveTimestamps(a.clip_pack_recommendation.option_composite_match.split(':')[1] || a.clip_pack_recommendation.option_composite_match, handleJumpToClip)}</li>
+                                <li><strong>📅 {a.clip_pack_recommendation.option_content_calendar.split(':')[0]}:</strong> {a.clip_pack_recommendation.option_content_calendar.split(':')[1] || a.clip_pack_recommendation.option_content_calendar}</li>
+                              </ul>
+                            </div>
+                          )}
+
                           {/* Secondary Viral Clips List if video contains multiple key rallies */}
                           {a.secondary_clips && a.secondary_clips.length > 0 && (
                             <div className="secondary-clips-container" style={{ marginTop: '24px' }}>
                               <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '1rem', marginBottom: '14px', fontWeight: 600 }}>
                                 <Sparkles size={18} />
-                                Clips Secundarios Destacados ({a.secondary_clips.length} jugadas adicionales en este video)
+                                Clips Secundarios Destacados ({a.secondary_clips.length} jugadas adicionales ordenadas por cronología del partido)
                               </h4>
                               {a.secondary_clips.map((sec, idx) => (
                                 <div key={idx} className="clip-recommendation-card" style={{ borderColor: 'rgba(245, 158, 11, 0.4)', marginBottom: '16px', background: 'rgba(245, 158, 11, 0.03)' }}>
                                   <div className="clip-time-bar">
-                                    <div className="clip-time-info">
+                                    <div className="clip-time-info" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                       <Scissors size={16} className="scissors-icon" style={{ color: '#f59e0b' }} />
                                       <span>
-                                        {sec.title || `Clip #${sec.clip_id}`}: <strong>{sec.start_time} ➔ {sec.end_time}</strong>
+                                        <strong>{sec.title || `Clip #${sec.clip_id}`}</strong>: <strong>{sec.start_time} ➔ {sec.end_time}</strong>
                                         <span className="duration-pill">({sec.duration_seconds} segs)</span>
                                       </span>
+                                      {sec.viral_score && (
+                                        <span className="duration-pill" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.4)' }}>
+                                          ⭐ Score: {sec.viral_score}/100
+                                        </span>
+                                      )}
                                     </div>
                                     <button
                                       type="button"
@@ -917,9 +938,9 @@ export default function App() {
                                         e.stopPropagation();
                                         handleJumpToClip(sec.start_seconds);
                                       }}
-                                      title={`Ir al inicio del Clip #${sec.clip_id} en el reproductor`}
+                                      title={`Ir al inicio del Clip #${sec.clip_id} (${sec.start_time}) en el reproductor`}
                                     >
-                                      <Play size={14} fill="#fff" /> Reproducir Clip #{sec.clip_id}
+                                      <Play size={14} fill="#fff" /> Ir al segundo {sec.start_time}
                                     </button>
                                   </div>
                                   {sec.dead_time_cut_advice && (
