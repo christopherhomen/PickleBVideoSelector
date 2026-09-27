@@ -305,15 +305,19 @@ def download_cut_clip(video_id: str, start_seconds: int = 0, end_seconds: int = 
     if not cut_file_path.exists() or cut_file_path.stat().st_size < 1000:
         import imageio_ffmpeg
         ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+        
+        # Tone-map iPhone 10-bit HLG/HDR (BT.2020) to vibrant Standard SDR (BT.709 yuv420p)
+        vf_filter = "zscale=transfer=bt709:matrix=bt709:primaries=bt709,format=yuv420p,eq=saturation=1.12:contrast=1.04"
+        
         cmd = [
             ffmpeg, "-y",
             "-avoid_negative_ts", "make_zero",
             "-ss", str(start_sec),
             "-i", str(original_path),
             "-t", str(duration),
+            "-vf", vf_filter,
             "-c:v", "libx264",
-            "-pix_fmt", "yuv420p",
-            "-crf", "20",
+            "-crf", "19",
             "-preset", "ultrafast",
             "-c:a", "aac",
             "-b:a", "128k",
@@ -323,7 +327,12 @@ def download_cut_clip(video_id: str, start_seconds: int = 0, end_seconds: int = 
         try:
             subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error recortando el video con FFmpeg: {e}")
+            # Fallback filter if zscale has an issue
+            cmd[6] = "format=yuv420p"
+            try:
+                subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except Exception as e2:
+                raise HTTPException(status_code=500, detail=f"Error recortando el video con FFmpeg: {e2}")
 
     download_name = f"PickleScout_{original_path.stem}_{start_sec}s_{end_sec}s.mp4"
     return FileResponse(
