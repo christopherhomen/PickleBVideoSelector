@@ -45,6 +45,11 @@ REGLAS OBLIGATORIAS DE PRECISIÓN MILIMÉTRICA DE TIEMPOS:
    - Toma 1 (Hook): Desde el saque o primera devolución hasta la subida a la cocina.
    - Toma 2 (Clímax): El intercambio rápido en la red (dinks/voleas).
    - Toma 3 (Desenlace): El remate ganador o error forzado + Congelado de imagen y Call to Action.
+4. FIDELIDAD VISUAL Y ESPECIFICIDAD OBLIGATORIA DE TEXTOS EN PANTALLA:
+   - Los textos sugeridos para CapCut ('on_screen_text' y 'on_screen_text_en') NO PUEDEN SER PLANTILLAS GENÉRICAS.
+   - DEBEN describir la acción física exacta observada en la imagen en ese rango de segundos.
+   - Ejemplo: Si en la Toma 3 a los 02:10 ocurre un remate o smash a quemarropa, el texto DEBE mencionar explícitamente ese remate o smash. Si ocurre una falta en la cocina o salvada baja, DEBE mencionar la falta o la salvada vista en pantalla.
+   - Combina la VERDAD VISUAL observada en el video con un gancho viral de alta retención que motive a comentar.
 
 Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura exacta:
 {
@@ -303,13 +308,11 @@ def analyze_video_file(video_id: str, custom_api_key: Optional[str] = None) -> D
 
         # High-availability model hierarchy with persistent multi-pass fallback against 503 (demand spike) and 429 (quota)
         models_to_try = [
-            "gemini-2.5-flash",           # Extremely fast & high capacity multimodal model
-            "gemini-1.5-flash",           # Battle-tested high availability production model
-            "gemini-2.5-pro",             # High precision reasoning model
-            "gemini-1.5-pro",             # Deep context production fallback
-            "gemini-2.0-flash-exp",       # Next-gen experimental flash model
-            "gemini-3.5-flash-lite",      # Fast lite model
-            "gemini-3.5-flash"            # Standard 3.5 tier
+            "gemini-2.5-flash",           # High capacity fast multimodal model
+            "gemini-3.5-flash-lite",      # Ultra fast lite production tier
+            "gemini-3.5-flash",           # Core next-gen flash model
+            "gemini-3.1-flash-lite",      # High-capacity production fallback
+            "gemini-3.6-flash"            # Next-gen reasoning model
         ]
         analysis_data = None
         last_error = None
