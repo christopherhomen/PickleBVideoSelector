@@ -1026,6 +1026,7 @@ export default function App() {
                       const capcut = a.capcut_recommendation;
                       if (!capcut) return null;
 
+                      const clip = extractViralClipInfo(a);
                       const isEn = capcutLang === 'en';
 
                       return (
