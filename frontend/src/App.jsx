@@ -910,12 +910,24 @@ export default function App() {
                           {a.clip_pack_recommendation && (
                             <div className="pack-recommendation-box" style={{ marginTop: '20px', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.04) 100%)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '16px 20px' }}>
                               <h5 style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 10px 0', fontSize: '0.98rem' }}>
-                                <Sparkles size={16} /> {a.clip_pack_recommendation.title}
+                                <Sparkles size={16} /> {a.clip_pack_recommendation.title || '🎯 Estrategia Sugerida de Selección para el Editor'}
                               </h5>
                               <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '0.88rem', color: '#d1d5db', lineHeight: '1.6' }}>
-                                <li style={{ marginBottom: '6px' }}><strong>🔥 {a.clip_pack_recommendation.option_single_hero.split(':')[0]}:</strong> {renderInteractiveTimestamps(a.clip_pack_recommendation.option_single_hero.split(':')[1] || a.clip_pack_recommendation.option_single_hero, handleJumpToClip)}</li>
-                                <li style={{ marginBottom: '6px' }}><strong>🎬 {a.clip_pack_recommendation.option_composite_match.split(':')[0]}:</strong> {renderInteractiveTimestamps(a.clip_pack_recommendation.option_composite_match.split(':')[1] || a.clip_pack_recommendation.option_composite_match, handleJumpToClip)}</li>
-                                <li><strong>📅 {a.clip_pack_recommendation.option_content_calendar.split(':')[0]}:</strong> {a.clip_pack_recommendation.option_content_calendar.split(':')[1] || a.clip_pack_recommendation.option_content_calendar}</li>
+                                {a.clip_pack_recommendation.option_single_hero && (
+                                  <li style={{ marginBottom: '6px' }}>
+                                    <strong>🔥 {(a.clip_pack_recommendation.option_single_hero.split(':')[0] || 'Opción A')}:</strong> {renderInteractiveTimestamps(a.clip_pack_recommendation.option_single_hero.split(':')[1] || a.clip_pack_recommendation.option_single_hero, handleJumpToClip)}
+                                  </li>
+                                )}
+                                {a.clip_pack_recommendation.option_composite_match && (
+                                  <li style={{ marginBottom: '6px' }}>
+                                    <strong>🎬 {(a.clip_pack_recommendation.option_composite_match.split(':')[0] || 'Opción B')}:</strong> {renderInteractiveTimestamps(a.clip_pack_recommendation.option_composite_match.split(':')[1] || a.clip_pack_recommendation.option_composite_match, handleJumpToClip)}
+                                  </li>
+                                )}
+                                {a.clip_pack_recommendation.option_content_calendar && (
+                                  <li>
+                                    <strong>📅 {(a.clip_pack_recommendation.option_content_calendar.split(':')[0] || 'Opción C')}:</strong> {a.clip_pack_recommendation.option_content_calendar.split(':')[1] || a.clip_pack_recommendation.option_content_calendar}
+                                  </li>
+                                )}
                               </ul>
                             </div>
                           )}
