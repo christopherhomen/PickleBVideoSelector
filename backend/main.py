@@ -307,10 +307,12 @@ def download_cut_clip(video_id: str, start_seconds: int = 0, end_seconds: int = 
         ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
         cmd = [
             ffmpeg, "-y",
+            "-avoid_negative_ts", "make_zero",
             "-ss", str(start_sec),
             "-i", str(original_path),
             "-t", str(duration),
             "-c:v", "libx264",
+            "-pix_fmt", "yuv420p",
             "-crf", "20",
             "-preset", "ultrafast",
             "-c:a", "aac",

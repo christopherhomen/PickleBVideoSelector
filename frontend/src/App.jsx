@@ -1064,6 +1064,18 @@ export default function App() {
                                 {copiedKey === 'capcut_full' ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
                                 {copiedKey === 'capcut_full' ? '¡Guion Copiado!' : (isEn ? 'Copy Full Script' : 'Copiar Guion Completo')}
                               </button>
+
+                              {clip && (
+                                <a
+                                  href={`/api/videos/${selectedVideo.id}/cut?start_seconds=${clip.start_seconds}&end_seconds=${clip.end_seconds}`}
+                                  download
+                                  className="btn btn-download-capcut"
+                                  style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600 }}
+                                  title="Descargar el clip completo de este guion de CapCut con las 3 tomas unidas en formato MP4"
+                                >
+                                  <Download size={14} /> {isEn ? 'Download Full Clip (.MP4)' : 'Descargar Clip Completo (.MP4)'}
+                                </a>
+                              )}
                             </div>
                           </div>
 
